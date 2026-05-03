@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Task Manager</title>
+</head>
+<body>
+
+<h2>Signup</h2>
+<input id="sname" placeholder="Name"><br><br>
+<input id="semail" placeholder="Email"><br><br>
+<input id="spassword" type="password" placeholder="Password"><br><br>
+<input id="srole" placeholder="Role (admin/member)"><br><br>
+<button onclick="signup()">Signup</button>
+
+<h2>Login</h2>
+<input id="email" placeholder="Email"><br><br>
+<input id="password" type="password" placeholder="Password"><br><br>
+<button onclick="login()">Login</button>
+
+<h2>Create Task</h2>
+<input id="title" placeholder="Task Title"><br><br>
+<input id="userId" placeholder="Assign to User ID"><br><br>
+<button onclick="createTask()">Create Task</button>
+
+<h2>Your Tasks</h2>
+<button onclick="loadTasks()">Load Tasks</button>
+<ul id="taskList"></ul>
+
+<script>
+let token = "";
+
+// SIGNUP
+function signup() {
+    fetch("http://127.0.0.1:5000/signup", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            name: document.getElementById("sname").value,
+            email: document.getElementById("semail").value,
+            password: document.getElementById("spassword").value,
+            role: document.getElementById("srole").value
+        })
+    })
+    .then(res => res.json())
+    .then(data => alert(data.message));
+}
+
+// LOGIN
+function login() {
+    fetch("http://127.0.0.1:5000/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            email: document.getElementById("email").value,
+            password: document.getElementById("password").value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        token = data.token;
+        alert("Login successful!");
+    });
+}
+
+// CREATE TASK
+function createTask() {
+    fetch("http://127.0.0.1:5000/tasks", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": token
+        },
+        body: JSON.stringify({
+            title: document.getElementById("title").value,
+            assigned_to: document.getElementById("userId").value
+        })
+    })
+    .then(res => res.json())
+    .then(data => alert(data.message));
+}
+
+// LOAD TASKS
+function loadTasks() {
+    fetch("http://127.0.0.1:5000/tasks", {
+        method: "GET",
+        headers: {"Authorization": token}
+    })
+    .then(res => res.json())
+    .then(tasks => {
+        let list = document.getElementById("taskList");
+        list.innerHTML = "";
+        tasks.forEach(task => {
+            let li = document.createElement("li");
+            li.innerHTML = task[1] + " - " + task[2] +
+            ` <button onclick="markDone(${task[0]})">Done</button>`;
+            list.appendChild(li);
+        });
+    });
+}
+
+// MARK DONE
+function markDone(id) {
+    fetch("http://127.0.0.1:5000/tasks/" + id, {
+        method: "PUT",
+        headers: {"Authorization": token}
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Task updated");
+        loadTasks();
+    });
+}
+</script>
+
+</body>
+</html>
